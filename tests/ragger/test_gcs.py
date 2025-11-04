@@ -1136,6 +1136,7 @@ def test_gcs_nested_execTransaction_send(scenario_navigator: NavigateWithScenari
             abi=json.load(f),
             address=bytes.fromhex("23F8abfC2824C397cCB3DA89ae772984107dDB99")
         )
+    # pylint: disable=line-too-long
     data = contract.encode_abi("execTransaction", [
         contract.address,
         Web3.to_wei(0.0042, "ether"),
@@ -1252,6 +1253,7 @@ def test_gcs_nested_execTransaction_addOwnerWithThreshold(scenario_navigator: Na
         bytes.fromhex("FD6765Ad4eE64668701356a16aB28B123B3A4170"),
         2
     ])
+    # pylint: disable=line-too-long
     data = contract.encode_abi("execTransaction", [
         contract.address,
         Web3.to_wei(0, "ether"),
@@ -1264,6 +1266,7 @@ def test_gcs_nested_execTransaction_addOwnerWithThreshold(scenario_navigator: Na
         bytes.fromhex("0000000000000000000000000000000000000000"),
         bytes.fromhex("c14660c23f715fc85c01326c7fa7f05ddeb71147fc7bad912eace6ee55c24a314f814262b3c8ca64fc77377ce6e65b20bdc902c34931888c433e23ab0069843d1bf3d2dfb18fd6bd807002bffec3326755c928e325981f30e1518e999b348a5f011446931b8bd9fbb152cdc00d945b7cd030c14e48c7826d31f9c09a1376f694de1b"),
     ])
+    # pylint: enable=line-too-long
 
     tx_params = {
         "nonce": 78,
@@ -1575,6 +1578,7 @@ def test_gcs_nested_execTransaction_changeThreshold(scenario_navigator: Navigate
     sub_data = contract.encode_abi("changeThreshold", [
         3
     ])
+    # pylint: disable=line-too-long
     data = contract.encode_abi("execTransaction", [
         contract.address,
         Web3.to_wei(0, "ether"),
@@ -1587,6 +1591,7 @@ def test_gcs_nested_execTransaction_changeThreshold(scenario_navigator: Navigate
         bytes.fromhex("0000000000000000000000000000000000000000"),
         bytes.fromhex("d3a6ddfb9dffe883d609129d9e87dda928a4a9b9d5d2f4a93879d03ccb0d32b12df7dcf9acd9c5f73443c82b0e01183794436a381148cf2fb928f7df776a01701b2fc9ebbc15bfdae0f5ef1b6f4ad1389d31f1dc137e51e7a184e255fd0ed065911ad684bd97ee43892013b4eebdaec528020ed657b92b90562f4df5a18540e4b91b"),
     ])
+    # pylint: enable=line-too-long
 
     tx_params = {
         "nonce": 83,

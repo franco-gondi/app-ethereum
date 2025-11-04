@@ -24,9 +24,8 @@ from client.tx_simu import TxSimu
 from client.proxy_info import ProxyInfo
 
 from client.gcs import (
-    Field, ParamType, ParamRaw, Value, TypeFamily, DataPath, PathTuple, ParamTrustedName,
-    ParamNFT, ParamDatetime, DatetimeType, ParamTokenAmount, ParamToken, ParamCalldata,
-    ParamAmount, ContainerPath, PathLeaf, PathLeafType, PathRef, PathArray, TxInfo
+    Field, Value, TypeFamily, DataPath, PathTuple, ParamTokenAmount,
+    ContainerPath, PathLeaf, PathLeafType, TxInfo
 )
 
 
@@ -745,7 +744,7 @@ def eip712_calldata_common(scenario_navigator: NavigateWithScenario,
                            test_name: str,
                            filename: str,
                            handler: Optional[Callable] = None):
-    with open("%s/%s.json" % (eip712_json_path(), filename)) as file:
+    with open(f"{eip712_json_path()}/{filename}.json", encoding="utf-8") as file:
         data = json.load(file)
 
     filters = {
