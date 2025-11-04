@@ -20,7 +20,7 @@ class TxSimu(TlvSerializable):
     tx_hash: Optional[bytes] = None
     chain_id: Optional[int] = None
     domain_hash: Optional[bytes] = None
-    provider_message:  Optional[str]
+    provider_message: Optional[str]
 
     def __init__(self,
                  simu_type: SimuType,
@@ -53,13 +53,13 @@ class TxSimu(TlvSerializable):
         payload += self.serialize_field(FieldTag.TX_HASH, self.tx_hash)
         payload += self.serialize_field(FieldTag.TX_CHECKS_NORMALIZED_RISK, self.risk)
         payload += self.serialize_field(FieldTag.TX_CHECKS_NORMALIZED_CATEGORY, self.category)
-        payload += self.serialize_field(FieldTag.TX_CHECKS_TINY_URL, self.tiny_url.encode('utf-8'))
+        payload += self.serialize_field(FieldTag.TINY_URL, self.tiny_url.encode('utf-8'))
         if self.chain_id:
             payload += self.serialize_field(FieldTag.CHAIN_ID, self.chain_id.to_bytes(8, 'big'))
         if self.domain_hash:
             payload += self.serialize_field(FieldTag.DOMAIN_HASH, self.domain_hash)
         if self.provider_message:
-            payload += self.serialize_field(FieldTag.TX_CHECKS_PROVIDER_MSG, self.provider_message.encode('utf-8'))
+            payload += self.serialize_field(FieldTag.MESSAGE, self.provider_message.encode('utf-8'))
 
         # Append the data Signature
         payload += self.serialize_field(FieldTag.DER_SIGNATURE, sign_data(Key.TRANSACTION_CHECKS, payload))
