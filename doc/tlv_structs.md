@@ -403,3 +403,18 @@ The _Role_ is normalized and interpreted like this:
 | SIGNATURE         | 0x15 | uint8[]      | Signature of the structure     |                                    |
 
 The signature is computed on the full payload data, using `CX_CURVE_SECP256K1`.
+
+## GATING_SIGNING
+
+### GATING_DESCRIPTOR
+
+| Name              | Tag  | Payload type | Description                      | Value                             |
+|-------------------|------|--------------|----------------------------------|-----------------------------------|
+| STRUCTURE_TYPE    | 0x01 | uint8        | Structure type                   | `0x0D` (`TYPE_GATED_SIGNING`)     |
+| STRUCTURE_VERSION | 0x02 | uint8        | Structure version                | `0x01`                            |
+| ADDRESS           | 0x22 | uint8[20]    | Transaction Address              |                                   |
+| CHAIN_ID          | 0x23 | uint64       | Transaction chain ID             |                                   |
+| SELECTOR          | 0x40 | uint8[4]     | Smart contract function selector |                                   |
+| SIGNATURE         | 0x15 | uint8[]      | Signature of the structure       |                                   |
+
+The signature is computed on the full payload data, using `CX_CURVE_SECP256K1`.
