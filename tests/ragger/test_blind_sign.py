@@ -70,7 +70,8 @@ def common_blind_sign(scenario_navigator: NavigateWithScenario,
                       test_name: str,
                       app_client: EthAppClient,
                       tx_params: dict,
-                      reject: bool = False):
+                      reject: bool = False,
+                      nb_warnings: int = 1) -> None:
     try:
         with app_client.sign(BIP32_PATH, tx_params):
             if reject:
@@ -80,9 +81,9 @@ def common_blind_sign(scenario_navigator: NavigateWithScenario,
                 test_name += "_nonzero"
 
             if reject:
-                scenario_navigator.review_reject_with_warning(test_name=test_name)
+                scenario_navigator.review_reject_with_warning(test_name=test_name, nb_warnings=nb_warnings)
             else:
-                scenario_navigator.review_approve_with_warning(test_name=test_name)
+                scenario_navigator.review_approve_with_warning(test_name=test_name, nb_warnings=nb_warnings)
 
     except ExceptionRAPDU as e:
         assert reject
@@ -101,7 +102,8 @@ def test_blind_sign(navigator: Navigator,
                     test_name: str,
                     reject: bool,
                     amount: float,
-                    simu_params: Optional[TxSimu] = None):
+                    simu_params: Optional[TxSimu] = None,
+                    nb_warnings: int = 1):
     if reject and amount > 0.0:
         pytest.skip()
 
@@ -127,7 +129,8 @@ def test_blind_sign(navigator: Navigator,
                       test_name,
                       app_client,
                       tx_params,
-                      reject)
+                      reject,
+                      nb_warnings)
 
 
 # Token approval, would require providing the token metadata from the CAL
