@@ -1136,6 +1136,7 @@ def test_gcs_nested_execTransaction_send(scenario_navigator: NavigateWithScenari
             abi=json.load(f),
             address=bytes.fromhex("23F8abfC2824C397cCB3DA89ae772984107dDB99")
         )
+    # pylint: disable=line-too-long
     data = contract.encode_abi("execTransaction", [
         contract.address,
         Web3.to_wei(0.0042, "ether"),
@@ -1148,6 +1149,7 @@ def test_gcs_nested_execTransaction_send(scenario_navigator: NavigateWithScenari
         bytes.fromhex("0000000000000000000000000000000000000000"),
         bytes.fromhex("a974345670d8e06c52eeb7bfe59b1ed0fc879223ff0938c859c3852110c8c58016ec4bf0c68e84d3a40e3ac519f0a0db6954e7c4107fc6985de7dc683603f62a1b"),
     ])
+    # pylint: enable=line-too-long
 
     tx_params = {
         "nonce": 77,
@@ -1252,6 +1254,7 @@ def test_gcs_nested_execTransaction_addOwnerWithThreshold(scenario_navigator: Na
         bytes.fromhex("FD6765Ad4eE64668701356a16aB28B123B3A4170"),
         2
     ])
+    # pylint: disable=line-too-long
     data = contract.encode_abi("execTransaction", [
         contract.address,
         Web3.to_wei(0, "ether"),
@@ -1264,6 +1267,7 @@ def test_gcs_nested_execTransaction_addOwnerWithThreshold(scenario_navigator: Na
         bytes.fromhex("0000000000000000000000000000000000000000"),
         bytes.fromhex("c14660c23f715fc85c01326c7fa7f05ddeb71147fc7bad912eace6ee55c24a314f814262b3c8ca64fc77377ce6e65b20bdc902c34931888c433e23ab0069843d1bf3d2dfb18fd6bd807002bffec3326755c928e325981f30e1518e999b348a5f011446931b8bd9fbb152cdc00d945b7cd030c14e48c7826d31f9c09a1376f694de1b"),
     ])
+    # pylint: enable=line-too-long
 
     tx_params = {
         "nonce": 78,
@@ -1575,6 +1579,7 @@ def test_gcs_nested_execTransaction_changeThreshold(scenario_navigator: Navigate
     sub_data = contract.encode_abi("changeThreshold", [
         3
     ])
+    # pylint: disable=line-too-long
     data = contract.encode_abi("execTransaction", [
         contract.address,
         Web3.to_wei(0, "ether"),
@@ -1587,6 +1592,7 @@ def test_gcs_nested_execTransaction_changeThreshold(scenario_navigator: Navigate
         bytes.fromhex("0000000000000000000000000000000000000000"),
         bytes.fromhex("d3a6ddfb9dffe883d609129d9e87dda928a4a9b9d5d2f4a93879d03ccb0d32b12df7dcf9acd9c5f73443c82b0e01183794436a381148cf2fb928f7df776a01701b2fc9ebbc15bfdae0f5ef1b6f4ad1389d31f1dc137e51e7a184e255fd0ed065911ad684bd97ee43892013b4eebdaec528020ed657b92b90562f4df5a18540e4b91b"),
     ])
+    # pylint: enable=line-too-long
 
     tx_params = {
         "nonce": 83,
@@ -2147,6 +2153,227 @@ def test_gcs_trusted_name_token(scenario_navigator: NavigateWithScenario, test_n
                                            challenge=challenge)
         app_client.provide_transaction_field_desc(field.serialize())
         i += 1
+
+    with app_client.sign(mode=SignMode.START_FLOW):
+        scenario_navigator.review_approve(test_name=test_name)
+
+
+def test_gcs_batch(scenario_navigator: NavigateWithScenario, test_name: str):
+    backend = scenario_navigator.backend
+    app_client = EthAppClient(backend)
+
+    tokens = [
+        {
+            "ticker": "USDT",
+            "address": bytes.fromhex("dac17f958d2ee523a2206206994597c13d831ec7"),
+            "decimals": 6,
+        },
+        {
+            "ticker": "WETH",
+            "address": bytes.fromhex("c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"),
+            "decimals": 18,
+        },
+    ]
+    with open(f"{ABIS_FOLDER}/erc20.json", encoding="utf-8") as f:
+        contract = Web3().eth.contract(
+            abi=json.load(f),
+            address=None
+        )
+    data0 = contract.encode_abi("transfer", [
+        bytes.fromhex("0000000000000000000000000000000000000000"),
+        int(500 * pow(10, tokens[0]["decimals"])),
+    ])
+    data1 = contract.encode_abi("transfer", [
+        bytes.fromhex("1111111111111111111111111111111111111111"),
+        int(0.25 * pow(10, tokens[1]["decimals"])),
+    ])
+
+    with open(f"{ABIS_FOLDER}/batch.json", encoding="utf-8") as f:
+        contract = Web3().eth.contract(
+            abi=json.load(f),
+            address=tokens[1]["address"]
+        )
+
+    data = contract.encode_abi("batchExecute", [[
+        (
+            tokens[0]["address"],
+            Web3.to_wei(0, "ether"),
+            data0
+        ),
+        (
+            tokens[1]["address"],
+            Web3.to_wei(0, "ether"),
+            data1
+        ),
+    ]])
+
+    tx_params = {
+        "nonce": 79,
+        "maxFeePerGas": Web3.to_wei(4.8, "gwei"),
+        "maxPriorityFeePerGas": Web3.to_wei(2, "gwei"),
+        "gas": 5118,
+        "to": contract.address,
+        "data": data,
+        "chainId": 1
+    }
+
+    with app_client.sign("m/44'/60'/0'/0/0", tx_params, mode=SignMode.STORE):
+        pass
+
+    sub_fields = [
+            Field(
+                1,
+                "To",
+                ParamRaw(
+                    1,
+                    Value(
+                        1,
+                        TypeFamily.ADDRESS,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                    )
+                )
+            ),
+            Field(
+                1,
+                "Amount",
+                ParamTokenAmount(
+                    1,
+                    Value(
+                        1,
+                        TypeFamily.UINT,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(1),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                        type_size=32,
+                    ),
+                    Value(
+                        1,
+                        TypeFamily.ADDRESS,
+                        container_path=ContainerPath.TO,
+                    ),
+                )
+            ),
+    ]
+
+    fields = [
+            Field(
+                1,
+                "Destination",
+                ParamCalldata(
+                    1,
+                    Value(
+                        1,
+                        TypeFamily.BYTES,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathRef(),
+                                PathArray(),
+                                PathRef(),
+                                PathTuple(2),
+                                PathRef(),
+                                PathLeaf(PathLeafType.DYNAMIC),
+                            ]
+                        ),
+                    ),
+                    Value(
+                        1,
+                        TypeFamily.ADDRESS,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathRef(),
+                                PathArray(),
+                                PathRef(),
+                                PathTuple(0),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                    ),
+                    amount=Value(
+                        1,
+                        TypeFamily.UINT,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathRef(),
+                                PathArray(),
+                                PathRef(),
+                                PathTuple(1),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                    ),
+                )
+            ),
+    ]
+
+    # compute instructions hash
+    inst_hash = hashlib.sha3_256()
+    for field in fields:
+        inst_hash.update(field.serialize())
+
+    tx_info = TxInfo(
+        1,
+        tx_params["chainId"],
+        contract.address,
+        get_selector_from_data(data),
+        inst_hash.digest(),
+        "Batch transaction",
+        creator_name="WETH",
+        creator_legal_name="Wrapped Ether",
+        creator_url="weth.io",
+    )
+
+    app_client.provide_transaction_info(tx_info.serialize())
+
+    # compute instructions hash
+    sub_inst_hash = hashlib.sha3_256()
+    for sub_field in sub_fields:
+        sub_inst_hash.update(sub_field.serialize())
+
+    sub_tx_info = [
+        TxInfo(
+            1,
+            tx_params["chainId"],
+            tokens[0]["address"],
+            get_selector_from_data(data0),
+            sub_inst_hash.digest(),
+            "Transfer token",
+        ),
+        TxInfo(
+            1,
+            tx_params["chainId"],
+            tokens[1]["address"],
+            get_selector_from_data(data1),
+            sub_inst_hash.digest(),
+            "Transfer token",
+        )
+    ]
+
+    for field in fields:
+        app_client.provide_transaction_field_desc(field.serialize())
+        for idx, sub_info in enumerate(sub_tx_info):
+            app_client.provide_token_metadata(tokens[idx]["ticker"],
+                                              tokens[idx]["address"],
+                                              tokens[idx]["decimals"],
+                                              tx_params["chainId"])
+            app_client.provide_transaction_info(sub_info.serialize())
+            for sub_field in sub_fields:
+                app_client.provide_transaction_field_desc(sub_field.serialize())
 
     with app_client.sign(mode=SignMode.START_FLOW):
         scenario_navigator.review_approve(test_name=test_name)
