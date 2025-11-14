@@ -5,7 +5,7 @@ from web3 import Web3
 
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 
-
+from dynamic_networks_cfg import get_network_config
 from constants import ABIS_FOLDER
 
 import client.response_parser as ResponseParser
@@ -19,6 +19,7 @@ from client.gcs import (
 )
 from client.tx_simu import TxSimu
 from client.proxy_info import ProxyInfo
+from client.dynamic_networks import DynamicNetwork
 
 
 def test_gcs_nft(scenario_navigator: NavigateWithScenario, test_name: str):
@@ -2361,6 +2362,233 @@ def test_gcs_batch(scenario_navigator: NavigateWithScenario, test_name: str):
             get_selector_from_data(data1),
             sub_inst_hash.digest(),
             "Transfer token",
+        )
+    ]
+
+    for field in fields:
+        app_client.provide_transaction_field_desc(field.serialize())
+        for idx, sub_info in enumerate(sub_tx_info):
+            app_client.provide_token_metadata(tokens[idx]["ticker"],
+                                              tokens[idx]["address"],
+                                              tokens[idx]["decimals"],
+                                              tx_params["chainId"])
+            app_client.provide_transaction_info(sub_info.serialize())
+            for sub_field in sub_fields:
+                app_client.provide_transaction_field_desc(sub_field.serialize())
+
+    with app_client.sign(mode=SignMode.START_FLOW):
+        scenario_navigator.review_approve(test_name=test_name)
+
+
+def XXtest_gcs_batch_2(scenario_navigator: NavigateWithScenario, test_name: str):
+    backend = scenario_navigator.backend
+    app_client = EthAppClient(backend)
+
+    tokens = [
+        {
+            "ticker": "USDC",
+            "address": bytes.fromhex("dac17f958d2ee523a2206206994597c13d831ec7"),
+            "decimals": 6,
+        },
+        {
+            "ticker": "USDC",
+            "address": bytes.fromhex("29FCB43B46531BCA003DDC8FCB67FFE91900C762"),
+            "decimals": 6,
+        },
+    ]
+    with open(f"{ABIS_FOLDER}/erc20.json", encoding="utf-8") as f:
+        contract = Web3().eth.contract(
+            abi=json.load(f),
+            address=None
+        )
+    data0 = contract.encode_abi("transfer", [
+        bytes.fromhex("B8C8EB8EFC68796E766F6AB320DB8C165C064949"),
+        int(0.004 * pow(10, tokens[0]["decimals"])),
+    ])
+    data1 = contract.encode_abi("transfer", [
+        bytes.fromhex("4DDA64E1EC1A2C00D0766F25877F6A3BC77F717E"),
+        int(0.008 * pow(10, tokens[1]["decimals"])),
+    ])
+
+    with open(f"{ABIS_FOLDER}/batch.json", encoding="utf-8") as f:
+        contract = Web3().eth.contract(
+            abi=json.load(f),
+            address=tokens[1]["address"]
+        )
+
+    data = contract.encode_abi("batchExecute", [[
+        (
+            tokens[0]["address"],
+            Web3.to_wei(0, "ether"),
+            data0
+        ),
+        (
+            tokens[1]["address"],
+            Web3.to_wei(0, "ether"),
+            data1
+        ),
+    ]])
+
+    tx_params = {
+        "nonce": 79,
+        "maxFeePerGas": Web3.to_wei(4.8, "gwei"),
+        "maxPriorityFeePerGas": Web3.to_wei(2, "gwei"),
+        "gas": 5118,
+        "to": contract.address,
+        "data": data,
+        "chainId": 137
+    }
+
+    # Send Network information (name, ticker, icon)
+    name, ticker, icon = get_network_config(backend.device.type, tx_params["chainId"])
+    if name and ticker:
+        app_client.provide_network_information(DynamicNetwork(name, ticker, tx_params["chainId"], icon))
+
+    with app_client.sign("m/44'/60'/0'/0/0", tx_params, mode=SignMode.STORE):
+        pass
+
+    sub_fields = [
+            Field(
+                1,
+                "To",
+                ParamRaw(
+                    1,
+                    Value(
+                        1,
+                        TypeFamily.ADDRESS,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                    )
+                )
+            ),
+            Field(
+                1,
+                "Amount",
+                ParamTokenAmount(
+                    1,
+                    Value(
+                        1,
+                        TypeFamily.UINT,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(1),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                        type_size=32,
+                    ),
+                    Value(
+                        1,
+                        TypeFamily.ADDRESS,
+                        container_path=ContainerPath.TO,
+                    ),
+                )
+            ),
+    ]
+
+    fields = [
+            Field(
+                1,
+                "Destination",
+                ParamCalldata(
+                    1,
+                    Value(
+                        1,
+                        TypeFamily.BYTES,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathRef(),
+                                PathArray(),
+                                PathRef(),
+                                PathTuple(2),
+                                PathRef(),
+                                PathLeaf(PathLeafType.DYNAMIC),
+                            ]
+                        ),
+                    ),
+                    Value(
+                        1,
+                        TypeFamily.ADDRESS,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathRef(),
+                                PathArray(),
+                                PathRef(),
+                                PathTuple(0),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                    ),
+                    amount=Value(
+                        1,
+                        TypeFamily.UINT,
+                        data_path=DataPath(
+                            1,
+                            [
+                                PathTuple(0),
+                                PathRef(),
+                                PathArray(),
+                                PathRef(),
+                                PathTuple(1),
+                                PathLeaf(PathLeafType.STATIC),
+                            ]
+                        ),
+                    ),
+                )
+            ),
+    ]
+
+    # compute instructions hash
+    inst_hash = hashlib.sha3_256()
+    for field in fields:
+        inst_hash.update(field.serialize())
+
+    tx_info = TxInfo(
+        1,
+        tx_params["chainId"],
+        contract.address,
+        get_selector_from_data(data),
+        inst_hash.digest(),
+        "sign multisig operation",
+        creator_name="Safe",
+        creator_legal_name="Safe{Wallet}",
+        creator_url="https://app.safe.global/welcome",
+        contract_name="SafeL2",
+    )
+
+    app_client.provide_transaction_info(tx_info.serialize())
+
+    # compute instructions hash
+    sub_inst_hash = hashlib.sha3_256()
+    for sub_field in sub_fields:
+        sub_inst_hash.update(sub_field.serialize())
+
+    sub_tx_info = [
+        TxInfo(
+            1,
+            tx_params["chainId"],
+            tokens[0]["address"],
+            get_selector_from_data(data0),
+            sub_inst_hash.digest(),
+            "Send",
+        ),
+        TxInfo(
+            1,
+            tx_params["chainId"],
+            tokens[1]["address"],
+            get_selector_from_data(data1),
+            sub_inst_hash.digest(),
+            "Send",
         )
     ]
 
